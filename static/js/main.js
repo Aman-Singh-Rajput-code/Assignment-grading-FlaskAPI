@@ -6,7 +6,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadButton = document.getElementById('upload-button');
     const uploadForm = document.getElementById('upload-form');
     const uploadContainer = document.getElementById('upload-container');
-    const loadingContainer = document.getElementById('loading-container');
+    const loaderDiv = document.querySelector('.loaderDiv');
+    const loaderP1 = document.querySelector('.loaderP1');
+    const loaderP2 = document.querySelector('.loaderP2');
     const fileLabel = document.querySelector('.file-label');
     
     // Handle file selection
@@ -92,7 +94,9 @@ document.addEventListener('DOMContentLoaded', function() {
     uploadForm.addEventListener('submit', function(e) {
         // Show loading animation
         uploadContainer.hidden = true;
-        loadingContainer.hidden = false;
+        loaderDiv.removeAttribute('hidden');
+        loaderP1.removeAttribute('hidden');
+        loaderP2.removeAttribute('hidden');
     });
     
     // Helper functions
