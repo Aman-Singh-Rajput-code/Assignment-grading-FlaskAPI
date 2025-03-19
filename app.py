@@ -4,7 +4,7 @@ import uuid
 import traceback
 import logging
 from werkzeug.utils import secure_filename
-import google.generativeai as genaiz
+import google.generativeai as genai
 from utils.document_parser import extract_text_from_pdf, extract_text_from_docx, extract_qa_pairs
 from utils.analyzer import analyze_answers
 from utils.grader import assign_grade
