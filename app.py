@@ -4,7 +4,7 @@ import uuid
 import traceback
 import logging
 from werkzeug.utils import secure_filename
-import google.generativeai as genai
+import google.generativeai as genaiz
 from utils.document_parser import extract_text_from_pdf, extract_text_from_docx, extract_qa_pairs
 from utils.analyzer import analyze_answers
 from utils.grader import assign_grade
@@ -230,4 +230,5 @@ def debug_page():
     """
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
