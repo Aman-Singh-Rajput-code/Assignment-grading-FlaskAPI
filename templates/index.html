@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Grader</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Document Grader</h1>
+            <p>Upload your document with questions and answers for grading</p>
+        </header>
+        
+        <main>
+            <section class="upload-section">
+                <div class="upload-container" id="upload-container">
+                    <form id="upload-form" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                        <div class="file-input-container">
+                            <label for="file-input" class="file-label">
+                                <div class="upload-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                </div>
+                                <div class="upload-text">
+                                    <span>Click to browse or drag and drop</span>
+                                    <span class="small">Supported formats: PDF, DOC, DOCX</span>
+                                </div>
+                            </label>
+                            <input type="file" id="file-input" name="file" accept=".pdf,.doc,.docx" hidden>
+                        </div>
+                        
+                        <div class="selected-file" id="selected-file">
+                            <span class="file-name" id="file-name">No file selected</span>
+                            <button type="button" class="remove-file" id="remove-file" hidden>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <button type="submit" class="upload-button" id="upload-button" disabled>
+                            Grade Document
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="loading-container" id="loading-container" hidden>
+                    <div class="loader"></div>
+                    <p>Analyzing document...</p>
+                    <p class="small">This may take a moment depending on the document size.</p>
+                </div>
+            </section>
+            
+            <section class="info-section">
+                <h2>How It Works</h2>
+                <div class="step">
+                    <div class="step-icon">1</div>
+                    <div class="step-content">
+                        <h3>Upload Your Document</h3>
+                        <p>Upload a PDF or Word document containing questions and answers.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">2</div>
+                    <div class="step-content">
+                        <h3>AI Analysis</h3>
+                        <p>Our AI analyzes each answer for correctness using Google's Gemini API.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">3</div>
+                    <div class="step-content">
+                        <h3>Get Results</h3>
+                        <p>Receive detailed feedback on each answer and an overall grade.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Document Grader. All rights reserved.</p>
+        </footer>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
