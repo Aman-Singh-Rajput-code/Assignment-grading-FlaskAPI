@@ -8,7 +8,8 @@ load_dotenv()
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Check if the API key is properly set
-print("WARNING: Gemini API key not properly configured. Please set the GEMINI_API_KEY environment variable or update the config.py file.")
+if not API_KEY:
+    print("WARNING: Gemini API key not properly configured. Please set the GEMINI_API_KEY environment variable or update the config.py file.")
 
 # File upload settings
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
