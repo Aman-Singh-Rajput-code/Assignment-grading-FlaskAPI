@@ -4,6 +4,7 @@ import json
 import os
 from dotenv import load_dotenv
 from utils.document_parser import extract_qa_pairs
+
 load_dotenv()
 
 # Configure Gemini AI
@@ -22,12 +23,12 @@ def analyze_answers(document_text):
     """
     # Extract question-answer pairs
     qa_pairs = extract_qa_pairs(document_text)
-    
+
     if not qa_pairs:
         return [{"error": "No question-answer pairs found in the document"}]
-    
+
     # Initialize Gemini model
-    model = genai.GenerativeModel("gemini-1.5-pro-latest")  # Updated model
+    model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
     results = []
 
@@ -38,38 +39,39 @@ def analyze_answers(document_text):
         
         # Create prompt for Gemini
         prompt = f"""
-        Evaluate if the following answer to the question is correct. If not, provide a suggestion.
+        You are an AI expert evaluating answers. Check if the answer is correct and provide an explanation.
 
         Question: {question}
         Answer: {user_answer}
 
-        Please respond in this JSON format:
+        Respond strictly in valid JSON format:
         {{
             "is_correct": true/false,
             "correct_answer": "the correct answer",
-            "explanation": "explanation of why the answer is correct or incorrect",
-            "suggestion": "suggestion for improvement if the answer is incorrect"
+            "explanation": "why the answer is correct or incorrect",
+            "suggestion": "how to improve the answer if incorrect"
         }}
-
-        Be lenient with minor spelling or grammatical errors if the core concept is correct.
         """
 
         try:
             response = model.generate_content(prompt)
             response_text = response.text
+
+            try:
+                analysis = json.loads(response_text)  # Parse response as JSON
+            except json.JSONDecodeError:
+                # Fallback: Extract JSON using regex
+                json_match = re.search(r'({.*})', response_text.replace('\n', ' '), re.DOTALL)
+                if json_match:
+                    analysis = json.loads(json_match.group(1))
+                else:
+                    analysis = {
+                        "is_correct": None,
+                        "correct_answer": "Unable to determine",
+                        "explanation": "Error processing the response",
+                        "suggestion": "Please try again"
+                    }
             
-            # Extract JSON from response (handle cases where the model adds extra text)
-            json_match = re.search(r'({.*})', response_text.replace('\n', ' '), re.DOTALL)
-            if json_match:
-                analysis = json.loads(json_match.group(1))
-            else:
-                analysis = {
-                    "is_correct": None,
-                    "correct_answer": "Unable to determine",
-                    "explanation": "Error processing the response",
-                    "suggestion": "Please try again"
-                }
-                
             # Add original question and answer to the result
             result = {
                 "question_num": question_num,
@@ -82,7 +84,7 @@ def analyze_answers(document_text):
             }
             
             results.append(result)
-            
+        
         except Exception as e:
             results.append({
                 "question_num": question_num,
@@ -92,4 +94,3 @@ def analyze_answers(document_text):
             })
 
     return results
-
