@@ -14,17 +14,20 @@ def extract_text_from_pdf(pdf_path):
         with open(pdf_path, 'rb') as file:
             pdf_reader = PyPDF2.PdfReader(file)
             logger.info(f"PDF has {len(pdf_reader.pages)} pages")
-            for page_num in range(len(pdf_reader.pages)):
-                page = pdf_reader.pages[page_num]
+            for page_num,page in enumerate(len(pdf_reader.pages)):
+#                page = pdf_reader.pages[page_num]
+#                page_text = page.extract_text()
+#                text += page_text
                 page_text = page.extract_text()
-                text += page_text
-                logger.debug(f"Extracted {len(page_text)} characters from page {page_num+1}")
+                if page_text:
+                    text += page_text
+#                logger.debug(f"Extracted {len(page_text)} characters from page {page_num+1}")
     except Exception as e:
         logger.error(f"Error extracting text from PDF: {e}")
         logger.error(traceback.format_exc())
     
-    logger.info(f"Total extracted text length: {len(text)} characters")
-    logger.debug(f"First 200 characters of extracted text: {text[:200]}")
+#    logger.info(f"Total extracted text length: {len(text)} characters")
+#   logger.debug(f"First 200 characters of extracted text: {text[:200]}")
     return text
 
 def extract_text_from_docx(docx_path):
