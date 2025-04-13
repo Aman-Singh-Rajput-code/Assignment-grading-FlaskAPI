@@ -8,27 +8,22 @@ logger = logging.getLogger(__name__)
 
 def extract_text_from_pdf(pdf_path):
     """Extract text content from a PDF file."""
-    text = ""
+    text_list = []
     try:
         logger.info(f"Extracting text from PDF: {pdf_path}")
         with open(pdf_path, 'rb') as file:
             pdf_reader = PyPDF2.PdfReader(file)
             logger.info(f"PDF has {len(pdf_reader.pages)} pages")
-            for page_num,page in enumerate(len(pdf_reader.pages)):
-#                page = pdf_reader.pages[page_num]
-#                page_text = page.extract_text()
-#                text += page_text
+            for page_num, page in enumerate(pdf_reader.pages):
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text
-#                logger.debug(f"Extracted {len(page_text)} characters from page {page_num+1}")
+                    text_list.append(page_text)
     except Exception as e:
         logger.error(f"Error extracting text from PDF: {e}")
         logger.error(traceback.format_exc())
-    
-#    logger.info(f"Total extracted text length: {len(text)} characters")
-#   logger.debug(f"First 200 characters of extracted text: {text[:200]}")
-    return text
+
+    return "\n".join(text_list)  # ✅ ensures it returns a string
+
 
 def extract_text_from_docx(docx_path):
     """Extract text content from a DOCX file."""
@@ -45,7 +40,10 @@ def extract_text_from_docx(docx_path):
     
     logger.info(f"Total extracted text length: {len(text)} characters")
     logger.debug(f"First 200 characters of extracted text: {text[:200]}")
-    return text
+    return text  # ✅ ensures a single string is returned
+
+#print("Type of text extracted:", type(text))
+
 
 def extract_qa_pairs(text):
     """
