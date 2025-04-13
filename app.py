@@ -24,8 +24,8 @@ def allowed_file(filename):
 @app.route('/')
 def home():
     return jsonify({
-        message: "Smart Assignment Grading API is running 🎯",
-        usage: "POST a .docx or .pdf file to /api/grade-assignment"
+        "message": "Smart Assignment Grading API is running 🎯",
+        "usage": "POST a .docx or .pdf file to /api/grade-assignment"
     })
 
 
