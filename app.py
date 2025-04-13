@@ -49,8 +49,11 @@ def grade_assignment():
             else:
                 text = extract_text_from_docx(file_path)
 
-            qa_pairs = extract_qa_pairs(text)
-            analysis = analyze_answers(qa_pairs)
+#            qa_pairs = extract_qa_pairs(text)
+#            analysis = analyze_answers(qa_pairs)
+#            text = extract_text_from_pdf(file_path)  # or extract_text_from_docx
+            analysis = analyze_answers(text)  # ✅ pass string here
+
             grade = assign_grade(analysis)
 
             return jsonify({
