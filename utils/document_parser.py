@@ -22,7 +22,7 @@ def extract_text_from_pdf(pdf_path):
         logger.error(f"Error extracting text from PDF: {e}")
         logger.error(traceback.format_exc())
 
-    return "\n".join(text_list)  # ✅ ensures it returns a string
+    return "\n".join(text_list)  # ✅ this guarantees it returns a single string
 
 
 def extract_text_from_docx(docx_path):
