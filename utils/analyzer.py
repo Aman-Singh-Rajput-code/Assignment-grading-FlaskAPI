@@ -39,22 +39,29 @@ def analyze_answers(document_text):
         
         # Create prompt for Gemini
         prompt = f"""
-        You are an AI expert evaluating answers. Check if the answer is correct and provide an explanation.
+You are an expert assignment evaluator. You must strictly respond in **valid JSON format**.
 
-        Question: {question}
-        Answer: {user_answer}
+Evaluate the student's answer and provide feedback.
 
-        Respond strictly in valid JSON format:
-        {{
-            "is_correct": true/false,
-            "correct_answer": "the correct answer",
-            "explanation": "why the answer is correct or incorrect",
-            "suggestion": "how to improve the answer if incorrect"
-        }}
-        """
+Question: {question}
+Answer: {user_answer}
+
+Format your response like:
+{{
+  "is_correct": true,
+  "correct_answer": "Expected correct answer here",
+  "explanation": "Detailed explanation of correctness or error",
+  "suggestion": "Improvement suggestion"
+}}
+
+Return only JSON. Do not include extra text or commentary.
+"""
+
 
         try:
             response = model.generate_content(prompt)
+            print(f"\n🔍 Gemini Raw Response (Q{question_num}):\n{response.text}\n")
+
             response_text = response.text
 
             try:
