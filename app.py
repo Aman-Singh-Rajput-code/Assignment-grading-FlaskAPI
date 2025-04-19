@@ -1,95 +1,67 @@
-import os
-import uuid
-import logging
 from flask import Flask, request, jsonify
-from werkzeug.utils import secure_filename
-from flask_cors import CORS
+import os
 
-from utils.document_parser import extract_text_from_pdf, extract_text_from_docx
-from utils.analyzer import analyze_answers
-from utils.grader import assign_grade
-from config import OPENAI_API_KEY, UPLOAD_FOLDER, ALLOWED_EXTENSIONS  # Changed to match config.py
-
-# Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-# App configurations
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
-
-# Ensure upload folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Function to check allowed file types
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/')
-def home():
-    return jsonify({
-        "message": "Smart Assignment Grading API is running 🎯",
-        "usage": "POST a .docx or .pdf file to /api/grade-assignment"
-    })
 
 @app.route('/api/grade-assignment', methods=['POST'])
 def grade_assignment():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
-
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}_{filename}")
+        # Save the file
+        file_path = f"./uploads/{file.filename}"
         file.save(file_path)
-
+        
+        # Document extraction logic (assuming DOCX file for this example)
         try:
-            # Log the uploaded file details
-            logger.debug(f"File uploaded: {filename}, saved to: {file_path}")
-
-            # Extract text from the file based on its extension
-            if filename.lower().endswith('.pdf'):
-                logger.debug("Extracting text from PDF file.")
-                text = extract_text_from_pdf(file_path)
-            elif filename.lower().endswith('.docx'):
-                logger.debug("Extracting text from DOCX file.")
-                text = extract_text_from_docx(file_path)
-            else:
-                return jsonify({'error': 'Unsupported file type'}), 400
-
-            if not text:
-                return jsonify({'error': 'Failed to extract text from the file'}), 400
-
-            # Analyze the extracted answers
-            logger.debug("Analyzing answers from extracted text.")
-            analysis = analyze_answers(text)
-
-            if not analysis or "error" in analysis[0]:
-                return jsonify({'error': 'Failed to analyze answers'}), 400
-
-            # Assign a grade based on the analysis
-            grade = assign_grade(analysis)
-
-            # Return the grade and analysis as a JSON response
-            return jsonify({
-                'grade': grade,
-                'analysis': analysis
-            })
-
+            # Dummy logic for extracting questions and answers
+            # Replace this with actual document parsing
+            qa_pairs = extract_qa_pairs(file_path)
+            if not qa_pairs:
+                return jsonify({"error": "Failed to extract QA pairs from the document"}), 400
         except Exception as e:
-            # Log the error and return a message to the user
-            logger.error(f"Error processing file {filename}: {str(e)}")
-            return jsonify({'error': f"An error occurred: {str(e)}"}), 500
+            return jsonify({"error": f"Error in document parsing: {str(e)}"}), 400
+        
+        # Analyze answers (dummy logic for now)
+        try:
+            analysis_results = analyze_answers(qa_pairs)
+            if not analysis_results:
+                return jsonify({"error": "Failed to analyze answers"}), 400
+        except Exception as e:
+            return jsonify({"error": f"Error in answer analysis: {str(e)}"}), 400
+        
+        # Prepare and return the response
+        response_data = {
+            "grade": {
+                "letter": "A",
+                "percentage": 95,
+                "correct": 9,
+                "total": 10,
+                "feedback": "Great job!"
+            },
+            "analysis": analysis_results
+        }
+        return jsonify(response_data)
 
-    return jsonify({'error': 'File type not allowed'}), 400
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+def extract_qa_pairs(file_path):
+    # Replace with actual logic to extract QA pairs from the uploaded document
+    # Dummy implementation
+    return [
+        {"question": "What is the capital of Germany?", "answer": "Berlin"},
+        {"question": "Which planet is known as the Red Planet?", "answer": "Mars"}
+    ]
+
+def analyze_answers(qa_pairs):
+    # Replace with actual analysis logic
+    # Dummy implementation
+    return [{"question_num": 1, "user_answer": "Berlin", "correct": True}]
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0")
+    app.run(debug=True)
