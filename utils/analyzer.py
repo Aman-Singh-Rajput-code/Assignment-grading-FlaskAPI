@@ -9,13 +9,14 @@ load_dotenv()
 openai.api_key = OPENAI_API_KEY
 
 def analyze_answers(document_text):
+    import traceback
+
     qa_pairs = extract_qa_pairs(document_text)
-    
+
     if not qa_pairs:
         return [{"error": "No question-answer pairs found in the document"}]
 
-    # Create one big prompt for batching
-    prompt = "You are an expert assignment evaluator. Analyze the following question-answer pairs and respond with a JSON array:\n\n"
+    prompt = "Analyze the following question-answer pairs and return the results in JSON format:\n\n"
     prompt += "[\n"
     for pair in qa_pairs:
         prompt += f'''  {{
@@ -40,28 +41,33 @@ Now, return a JSON array of objects using this format:
 """
 
     try:
-        response = openai.Completion.create(  # Correct method name here
+        response = openai.ChatCompletion.create(
             model=OPENAI_MODEL,
-            prompt=prompt,
+            messages=[
+                {"role": "system", "content": "You are an expert assignment evaluator."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.3,
-            max_tokens=2048  # Adjust based on your needs
+            max_tokens=2048
         )
 
-        output_text = response.choices[0].text.strip()  # Adjust to .text instead of .message.content
+        output_text = response['choices'][0]['message']['content'].strip()
         print("\n🧪 GPT-4o Raw Output:\n", output_text)
 
-        # Extract and parse the JSON
         json_data = json.loads(output_text)
 
-        # Merge question and answer back
         for i, analysis in enumerate(json_data):
             analysis["question"] = qa_pairs[i]['question']
             analysis["user_answer"] = qa_pairs[i]['answer']
 
         return json_data
 
-    except openai.OpenAIError as e:  # Correct exception type here
+    except openai.OpenAIError as e:
+        print("🔥 OpenAI API Error:", e)
+        traceback.print_exc()
         return [{"error": f"OpenAI API Error: {str(e)}"}]
 
     except Exception as e:
+        print("🔥 Unexpected error:", e)
+        traceback.print_exc()
         return [{"error": f"Unexpected error: {str(e)}"}]
