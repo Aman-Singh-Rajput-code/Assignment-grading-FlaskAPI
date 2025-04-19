@@ -27,7 +27,7 @@ def analyze_answers(document_text):
 
     prompt += """
 Now, return a JSON array of objects using this format:
-[ 
+[
   {
     "question_num": "1",
     "is_correct": true,
@@ -40,23 +40,18 @@ Now, return a JSON array of objects using this format:
 """
 
     try:
-        response = openai.Completion.create(
+        response = openai.Completion.create(  # Correct method name here
             model=OPENAI_MODEL,
             prompt=prompt,
             temperature=0.3,
-            max_tokens=2048
+            max_tokens=2048  # Adjust based on your needs
         )
 
-        output_text = response.choices[0].text.strip()
+        output_text = response.choices[0].text.strip()  # Adjust to .text instead of .message.content
+        print("\n🧪 GPT-4o Raw Output:\n", output_text)
 
-        # Check for empty response or invalid JSON
-        if not output_text:
-            return [{"error": "No response from OpenAI GPT-4o API"}]
-
-        try:
-            json_data = json.loads(output_text)
-        except json.JSONDecodeError:
-            return [{"error": "Failed to parse GPT response as JSON"}]
+        # Extract and parse the JSON
+        json_data = json.loads(output_text)
 
         # Merge question and answer back
         for i, analysis in enumerate(json_data):
@@ -66,7 +61,7 @@ Now, return a JSON array of objects using this format:
         return json_data
 
     except openai.error.OpenAIError as e:
-        return [{"error": f"OpenAI API Error: {str(e)}"}]
+        return [{"error": f"OpenAI API Error: {str(e)}"}]  # Correct exception handling
 
     except Exception as e:
-        return [{"error": f"Unexpected Error: {str(e)}"}]
+        return [{"error": f"Unexpected error: {str(e)}"}]
