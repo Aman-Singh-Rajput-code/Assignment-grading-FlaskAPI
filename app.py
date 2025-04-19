@@ -8,7 +8,7 @@ from utils.grader import assign_grade
 from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:3000"])
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
