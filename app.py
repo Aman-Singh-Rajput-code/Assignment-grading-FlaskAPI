@@ -58,6 +58,11 @@ def grade_assignment():
     except Exception as e:
         print(f"🔥 Error: {e}")
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/')
+def home():
+    return "Smart Assignment Grading API is live!"
+
 
 if __name__ == '__main__':
     app.run(debug=True)
