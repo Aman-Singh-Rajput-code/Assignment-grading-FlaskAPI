@@ -71,7 +71,7 @@ def grade_assignment():
             logger.debug("Analyzing answers from extracted text.")
             analysis = analyze_answers(text)
 
-            if not analysis:
+            if not analysis or "error" in analysis[0]:
                 return jsonify({'error': 'Failed to analyze answers'}), 400
 
             # Assign a grade based on the analysis

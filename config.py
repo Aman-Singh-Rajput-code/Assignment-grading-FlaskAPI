@@ -1,5 +1,6 @@
-import os
+# Remove API_KEY if not needed
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 

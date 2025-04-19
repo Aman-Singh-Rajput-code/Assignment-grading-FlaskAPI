@@ -40,13 +40,14 @@ Now, return a JSON array of objects using this format:
 """
 
     try:
-        response = openai.chat.completions.create(
+        response = openai.Completion.create(  # Correct method name here
             model=OPENAI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
+            prompt=prompt,
+            temperature=0.3,
+            max_tokens=2048  # Adjust based on your needs
         )
 
-        output_text = response.choices[0].message.content.strip()
+        output_text = response.choices[0].text.strip()  # Adjust to .text instead of .message.content
         print("\n🧪 GPT-4o Raw Output:\n", output_text)
 
         # Extract and parse the JSON
