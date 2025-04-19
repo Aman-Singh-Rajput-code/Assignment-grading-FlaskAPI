@@ -8,7 +8,7 @@ from flask_cors import CORS
 from utils.document_parser import extract_text_from_pdf, extract_text_from_docx
 from utils.analyzer import analyze_answers
 from utils.grader import assign_grade
-from config import API_KEY, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
+from config import OPENAI_API_KEY, UPLOAD_FOLDER, ALLOWED_EXTENSIONS  # Changed to match config.py
 
 # Initialize Flask app
 app = Flask(__name__)

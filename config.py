@@ -1,9 +1,11 @@
-# Remove API_KEY if not needed
+# config.py
+
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
+# Corrected variable names to match with what is used in app.py
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 
