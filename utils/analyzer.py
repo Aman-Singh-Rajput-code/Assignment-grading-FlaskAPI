@@ -60,8 +60,8 @@ Now, return a JSON array of objects using this format:
 
         return json_data
 
-    except openai.error.OpenAIError as e:
-        return [{"error": f"OpenAI API Error: {str(e)}"}]  # Correct exception handling
+    except openai.OpenAIError as e:  # Correct exception type here
+        return [{"error": f"OpenAI API Error: {str(e)}"}]
 
     except Exception as e:
         return [{"error": f"Unexpected error: {str(e)}"}]
