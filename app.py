@@ -2,13 +2,18 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
+from utils.document_parser import extract_text_from_pdf, extract_text_from_docx, extract_qa_pairs
+from utils.analyzer import analyze_answers
+from utils.grader import assign_grade
+from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
 
 app = Flask(__name__)
 CORS(app)
 
-# Define absolute path to uploads folder
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensure the folder exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/api/grade-assignment', methods=['POST'])
 def grade_assignment():
@@ -20,56 +25,38 @@ def grade_assignment():
         if file.filename == '':
             return jsonify({"error": "No selected file"}), 400
 
-        # Secure the filename and save it in the absolute uploads folder
+        if not allowed_file(file.filename):
+            return jsonify({"error": "Unsupported file type"}), 400
+
         filename = secure_filename(file.filename)
         file_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(file_path)
 
-        # Document extraction logic (dummy for now)
-        try:
-            qa_pairs = extract_qa_pairs(file_path)
-            if not qa_pairs:
-                return jsonify({"error": "Failed to extract QA pairs from the document"}), 400
-        except Exception as e:
-            return jsonify({"error": f"Error in document parsing: {str(e)}"}), 400
+        ext = filename.rsplit('.', 1)[1].lower()
+        if ext == 'pdf':
+            text = extract_text_from_pdf(file_path)
+        elif ext in ['doc', 'docx']:
+            text = extract_text_from_docx(file_path)
+        else:
+            return jsonify({"error": "Unsupported file format"}), 400
 
-        # Answer analysis logic (dummy)
-        try:
-            analysis_results = analyze_answers(qa_pairs)
-            if not analysis_results:
-                return jsonify({"error": "Failed to analyze answers"}), 400
-        except Exception as e:
-            return jsonify({"error": f"Error in answer analysis: {str(e)}"}), 400
+        if not text.strip():
+            return jsonify({"error": "Document is empty or unreadable"}), 400
 
-        # Return response
-        response_data = {
-            "grade": {
-                "letter": "A",
-                "percentage": 95,
-                "correct": 9,
-                "total": 10,
-                "feedback": "Great job!"
-            },
+        analysis_results = analyze_answers(text)
+
+        if "error" in analysis_results[0]:
+            return jsonify(analysis_results), 500
+
+        grade_result = assign_grade(analysis_results)
+
+        return jsonify({
+            "grade": grade_result,
             "analysis": analysis_results
-        }
-        return jsonify(response_data)
+        })
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
-
-def extract_qa_pairs(file_path):
-    # Dummy QA extraction logic
-    return [
-        {"question": "What is the capital of Germany?", "answer": "Berlin"},
-        {"question": "Which planet is known as the Red Planet?", "answer": "Mars"}
-    ]
-
-def analyze_answers(qa_pairs):
-    # Dummy analysis logic
-    return [
-        {"question_num": 1, "question": "What is the capital of Germany?", "user_answer": "Berlin", "correct": True},
-        {"question_num": 2, "question": "Which planet is known as the Red Planet?", "user_answer": "Mars", "correct": True}
-    ]
 
 if __name__ == '__main__':
     app.run(debug=True)
