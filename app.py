@@ -1,68 +1,60 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
 import os
-from utils.document_parser import extract_text_from_pdf, extract_text_from_docx, extract_qa_pairs
+import uuid
+from werkzeug.utils import secure_filename
+from flask_cors import CORS
+
+from utils.document_parser import extract_text_from_pdf, extract_text_from_docx
 from utils.analyzer import analyze_answers
 from utils.grader import assign_grade
-from config import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"])
+CORS(app, resources={r"/*": {"origins": "*"}})
 
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/api/grade-assignment', methods=['POST'])
-def grade_assignment():
-    try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No file part"}), 400
-
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
-
-        if not allowed_file(file.filename):
-            return jsonify({"error": "Unsupported file type"}), 400
-
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(file_path)
-
-        ext = filename.rsplit('.', 1)[1].lower()
-        if ext == 'pdf':
-            text = extract_text_from_pdf(file_path)
-        elif ext in ['doc', 'docx']:
-            text = extract_text_from_docx(file_path)
-        else:
-            return jsonify({"error": "Unsupported file format"}), 400
-
-        if not text.strip():
-            return jsonify({"error": "Document is empty or unreadable"}), 400
-
-        analysis_results = analyze_answers(text)
-
-        if "error" in analysis_results[0]:
-            return jsonify(analysis_results), 500
-
-        grade_result = assign_grade(analysis_results)
-
-        return jsonify({
-            "grade": grade_result,
-            "analysis": analysis_results
-        })
-
-    except Exception as e:
-        print(f"🔥 Error: {e}")
-        return jsonify({'error': str(e)}), 500
-    
 @app.route('/')
 def home():
-    return "Smart Assignment Grading API is live!"
+    return jsonify({
+        "message": "Smart Assignment Grading API (OpenAI GPT-4o) is running 🚀",
+        "usage": "POST a .docx or .pdf file to /api/grade-assignment"
+    })
 
+@app.route('/api/grade-assignment', methods=['POST'])
+def grade_assignment():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{uuid.uuid4()}_{filename}")
+        file.save(file_path)
+
+        try:
+            text = extract_text_from_pdf(file_path) if filename.lower().endswith('.pdf') else extract_text_from_docx(file_path)
+            analysis = analyze_answers(text)
+            grade = assign_grade(analysis)
+
+            return jsonify({
+                'grade': grade,
+                'analysis': analysis
+            })
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    return jsonify({'error': 'File type not allowed'}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)

@@ -1,12 +1,13 @@
+import openai
 import json
-import traceback
+import re
+import os
 from dotenv import load_dotenv
-from openai import OpenAI
 from utils.document_parser import extract_qa_pairs
-from config import OPENAI_API_KEY, OPENAI_MODEL
+from config import API_KEY, OPENAI_MODEL
 
 load_dotenv()
-client = OpenAI(api_key=OPENAI_API_KEY)
+openai.api_key = API_KEY
 
 def analyze_answers(document_text):
     qa_pairs = extract_qa_pairs(document_text)
@@ -14,53 +15,68 @@ def analyze_answers(document_text):
     if not qa_pairs:
         return [{"error": "No question-answer pairs found in the document"}]
 
-    prompt = "Analyze the following question-answer pairs and return the results in JSON format:\n\n"
-    prompt += "[\n"
-    for pair in qa_pairs:
-        prompt += f'''  {{
-    "question_num": "{pair['question_num']}",
-    "question": "{pair['question']}",
-    "user_answer": "{pair['answer']}"
-  }},\n'''
-    prompt = prompt.rstrip(",\n") + "\n]\n"
+    results = []
 
-    prompt += """
-Now, return a JSON array of objects using this format:
-[
-  {
-    "question_num": "1",
-    "is_correct": true,
-    "correct_answer": "Expected correct answer",
-    "explanation": "Why the answer is right or wrong",
-    "suggestion": "How the answer can be improved"
-  },
-  ...
-]
+    for qa in qa_pairs:
+        question = qa['question']
+        user_answer = qa['answer']
+        question_num = qa['question_num']
+
+        prompt = f"""
+You are an expert assignment evaluator. Strictly respond with JSON only.
+
+Question: {question}
+Answer: {user_answer}
+
+Return this format:
+{{
+  "is_correct": true,
+  "correct_answer": "Expected correct answer",
+  "explanation": "Why the answer is right or wrong",
+  "suggestion": "How to improve the answer"
+}}
 """
 
-    try:
-        response = client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=[
-                {"role": "system", "content": "You are an expert assignment evaluator."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=2048
-        )
+        try:
+            response = openai.ChatCompletion.create(
+                model=OPENAI_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
 
-        output_text = response.choices[0].message.content.strip()
-        print("\n🧪 GPT-4o Raw Output:\n", output_text)
+            response_text = response['choices'][0]['message']['content'].strip()
+            print(f"\n📩 GPT Response (Q{question_num}):\n{response_text}\n")
 
-        json_data = json.loads(output_text)
+            try:
+                analysis = json.loads(response_text)
+            except json.JSONDecodeError:
+                match = re.search(r'\{.*?\}', response_text, re.DOTALL)
+                if match:
+                    analysis = json.loads(match.group(0))
+                else:
+                    analysis = {
+                        "is_correct": None,
+                        "correct_answer": "Unable to determine",
+                        "explanation": "Invalid JSON format in response.",
+                        "suggestion": "Try again with a valid answer."
+                    }
 
-        for i, analysis in enumerate(json_data):
-            analysis["question"] = qa_pairs[i]['question']
-            analysis["user_answer"] = qa_pairs[i]['answer']
+            results.append({
+                "question_num": question_num,
+                "question": question,
+                "user_answer": user_answer,
+                "is_correct": analysis.get("is_correct", False),
+                "correct_answer": analysis.get("correct_answer", ""),
+                "explanation": analysis.get("explanation", ""),
+                "suggestion": analysis.get("suggestion", "")
+            })
 
-        return json_data
+        except Exception as e:
+            results.append({
+                "question_num": question_num,
+                "question": question,
+                "user_answer": user_answer,
+                "error": f"OpenAI error: {str(e)}"
+            })
 
-    except Exception as e:
-        print("🔥 Unexpected error:", e)
-        traceback.print_exc()
-        return [{"error": f"Unexpected error: {str(e)}"}]
+    return results
