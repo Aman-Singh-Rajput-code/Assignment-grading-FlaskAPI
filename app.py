@@ -7,10 +7,10 @@ from flask_cors import CORS
 from utils.document_parser import extract_text_from_pdf, extract_text_from_docx
 from utils.analyzer import analyze_answers
 from utils.grader import assign_grade
-from config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS
+from config import API_KEY, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
